@@ -8,7 +8,8 @@
 ; controls
 ; control root-string "root note" string "" "c4"
 ; control arp-string "arpeggio" string "space-separated semitone difference to the root" "0 4 7"
-; control dur "notes duration" real "seconds" 0.05 0.001 1
+; control initial-dur "initial note duration" real "seconds" 0.05 0.001 1
+; control final-dur "final note duration" real "seconds" 0.05 0.001 1
 ; control repeats "repeats" int "" 4 1 100
 ; control initial-lp-cutoff "initial LP cutoff" real "[Hz]" 2500 0 30000
 ; control final-lp-cutoff "final LP cutoff" real "[Hz]" 2500 0 30000
@@ -41,6 +42,7 @@
 (setf root (car (eval-string-to-list "foo" root-string)))
 (setf arp-length (length arp))
 (setf max-i (* repeats arp-length))
+(setf dur-delta (- final-dur initial-dur))
 (setf width-delta (- final-width initial-width))
 (setf lp-cutoff-delta (- final-lp-cutoff initial-lp-cutoff))
 (setf volume-delta (- final-volume initial-volume))
@@ -53,11 +55,12 @@
         (seq
             ; the seq has two elements: first is a note
             (let* (
-                    (progress (/ (+ 1.0 i) max-i))
+                    (progress (/ i (- max-i 1.0)))
                     (note-freq (step-to-hz (+ root (nth (rem i arp-length) arp))))
                     (lp-cutoff (+ initial-lp-cutoff (* progress lp-cutoff-delta)))
                     (volume (+ initial-volume (* progress volume-delta)))
                     (pulse-width (+ initial-width (* progress width-delta)))
+                    (dur (+ initial-dur (* progress dur-delta)))
                     (note-duration (duration-for-entire-periods note-freq dur))
                     )
                 (lp (stretch note-duration (mult (osc-pulse note-freq pulse-width) volume)) lp-cutoff)
