@@ -24,6 +24,19 @@
     (let ((form (strcat "(setq " symname " (list " str "))")))
         (eval (read (make-string-input-stream form)))))
 
+; Provided a signal being played at a frequency `note-freq` (Hz) for
+; an intended duration `intended-duration` (in seconds),
+; this function returns the duration the note should have
+; (in seconds) so that the signal's period is not cut.
+(defun duration-for-entire-periods (note-freq intended-duration)
+    (let* (
+            (period-duration (/ 1.0 note-freq))
+            (nbof-periods-to-play (round (/ intended-duration period-duration)))
+        )
+        (* nbof-periods-to-play period-duration)
+    )
+)
+
 (eval-string-to-list "arp" arp-string)
 (setf root (car (eval-string-to-list "foo" root-string)))
 (setf arp-length (length arp))
@@ -39,12 +52,15 @@
         ; if there are still notes to play, continue the sequence
         (seq
             ; the seq has two elements: first is a note
-            (let (
+            (let* (
+                    (progress (/ (float i) max-i))
                     (note-freq (step-to-hz (+ root (nth (rem i arp-length) arp))))
-                    (lp-cutoff (+ initial-lp-cutoff (* (/ (float i) max-i) lp-cutoff-delta)))
-                    (volume (+ initial-volume (* (/ (float i) max-i) volume-delta)))
-                    (pulse-width (+ initial-width (* (/ (float i) max-i) width-delta))))
-                (mult (lp (osc-pulse note-freq pulse-width) lp-cutoff) volume)
+                    (lp-cutoff (+ initial-lp-cutoff (* progress lp-cutoff-delta)))
+                    (volume (+ initial-volume (* progress volume-delta)))
+                    (pulse-width (+ initial-width (* progress width-delta)))
+                    (note-duration (duration-for-entire-periods note-freq dur))
+                    )
+                (stretch note-duration (mult (lp (osc-pulse note-freq pulse-width) lp-cutoff) volume))
             )
             ; second is the recursive call
             (arp-seq (+ i 1))
@@ -52,4 +68,4 @@
     )
 )
 
-(stretch dur (arp-seq 0))
+(arp-seq 0)
