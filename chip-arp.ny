@@ -53,14 +53,14 @@
         (seq
             ; the seq has two elements: first is a note
             (let* (
-                    (progress (/ (float i) max-i))
+                    (progress (/ (+ 1.0 i) max-i))
                     (note-freq (step-to-hz (+ root (nth (rem i arp-length) arp))))
                     (lp-cutoff (+ initial-lp-cutoff (* progress lp-cutoff-delta)))
                     (volume (+ initial-volume (* progress volume-delta)))
                     (pulse-width (+ initial-width (* progress width-delta)))
                     (note-duration (duration-for-entire-periods note-freq dur))
                     )
-                (stretch note-duration (mult (lp (osc-pulse note-freq pulse-width) lp-cutoff) volume))
+                (lp (stretch note-duration (mult (osc-pulse note-freq pulse-width) volume)) lp-cutoff)
             )
             ; second is the recursive call
             (arp-seq (+ i 1))
